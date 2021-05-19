@@ -1,5 +1,11 @@
 # Spring Boot + Vue3 前后端分离 实战wiki知识库系统
 
+## 遇到问题
+
+1. 跨越访问
+2. 雪花算法ID到前端之后精度丢失问题
+3. 前端编辑信息是时候相应式修改数据，使用tool.ts添加copy过程
+
 ## 基本知识点
 
 * SpringCloud = SpringBoot + 一堆组件
@@ -44,6 +50,7 @@
   代码没错却编译出错
   测试结果跟代码不符
   引入了jar包却没反应
+9. 修改配置类或pom.xml,建议重启应用，不要热部署
 
 ## 两种方式创建项目
 
@@ -1169,22 +1176,22 @@ Vue.js使用方法和jQuery.js有点像，只需要引入vue.js就可以使用�
       * components加入该组件
       * 在template中使用组件
 
-    ```js
-    // app.vue 的 script   
-    <script lang="ts">
-      import {defineComponent} from 'vue';
-      // 下面导入的组件名不能有'-'
-      import HelloWorld from '@/components/HelloWorld.vue';
+      ```js
+      // app.vue 的 script   
+      <script lang="ts">
+        import {defineComponent} from 'vue';
+        // 下面导入的组件名不能有'-'
+        import HelloWorld from '@/components/HelloWorld.vue';
 
-      export default defineComponent({
-        name: 'App',
-        components: {
-          HelloWorld,
-        },
-      });
-    </script>
-    ```
-    
+        export default defineComponent({
+          name: 'App',
+          components: {
+            HelloWorld,
+          },
+        });
+      </script>
+      ```
+
   4. 删除HelloWorld.vue与项目无关的代码
 * 细节注意
   * import 组件名不能出现'-'
@@ -1195,3 +1202,548 @@ Vue.js使用方法和jQuery.js有点像，只需要引入vue.js就可以使用�
   * 自定义组件建议加the-component
   * 要求script中import的组件名和components中的组件名相同
   * import组件名时用对应组件script中的name
+
+## 集成HTTP库axios
+
+也可以选择集成jQuery来实现http请求
+
+* 步骤
+  1. Terminal进入WEB项目目录
+  2. 安装axios
+
+    ```shell
+    cd web
+    npm install axios  --save
+    npm install axios@0.21.0  --save //设定版本号
+    ```
+
+## 配置跨域访问
+
+* 步骤
+  1. 在com.hopkin.wiki中新增config包
+  2. 编写CorsConfig类
+
+    ```java
+    import org.springframework.context.annotation.Configuration;
+    import org.springframework.web.cors.CorsConfiguration;
+    import org.springframework.web.servlet.config.annotation.CorsRegistry;
+    import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+    @Configuration
+    public class CorsConfig implements WebMvcConfigurer {
+
+      @Override
+      public void addCorsMappings(CorsRegistry registry) {
+          registry.addMapping("/**") //针对所有的接口
+                  .allowedOriginPatterns("*") //允许来源
+                  .allowedHeaders(CorsConfiguration.ALL)
+                  .allowedMethods(CorsConfiguration.ALL) //get post delet...
+                  .allowCredentials(true) // 允许前端携带凭证，如cookie
+                  .maxAge(3600); // 1小时内不需要再预检（发OPTIONS请求）在get之前有options请求判断接口的存在
+      }
+    }
+    ```
+
+## 电子书列表接口的前后端交互
+
+* 步骤
+  * 导入axios
+  * 编写页面中`<script>`标签下的的setup()初始化函数
+  * 启动前端和后端项目
+
+  ```js
+  import {defineComponent} from 'vue';
+  import axios from 'axios';
+
+  export default defineComponent({
+    name: 'Home',
+    setup(){
+      console.log("setup");
+      axios.get("http://...").then((response)=>{
+        console.log(response);
+      })
+    }
+  })
+
+  ```
+
+* 报错
+  * 属性未在实例中定义 -- 界面绑定参数，但JS中并未定义改该参数
+    方法：`ctrl+shift+F`删除之后看文档添加/移除出Vue的标签
+
+## Vue3数据绑定显示列表数据
+
+Vue核心功能：数据双向绑定
+
+* 数据绑定
+  * Vue2格式数据绑定
+  data中定义，声明周期方法中赋值
+  * Vue3 ref
+  * Vue3 reactive
+* 步骤(使用ref)
+  1. import ref相应功能
+  2. 在setup中设置响应式变量val
+  3. import导入生命周期函数onMounted
+  4. 在setup中编写onMounted函数，response获取值,val.value赋值
+  5. 变量值传给html界面，编写 return 函数
+
+```js
+import {defineComponent, onMounted, reactive, ref, toRef} from 'vue';
+    import axios from "axios";
+
+
+    export default defineComponent({
+        name: 'Home',
+        setup(){
+            console.log("setup");
+            const ebooks = ref();
+            const ebooks1 = reactive({books: []});
+
+            onMounted(()=>{
+                console.log("onMounted");
+                axios.get("http://localhost:8080/ebook/list?name=Spring").then((response) => {
+                    const data = response.data;
+                    ebooks.value = data.content;
+                    ebooks1.books = data.content;
+                    console.log(response);
+                })
+            })
+
+            return {
+                ebooks,
+                ebooks2: toRef(ebooks1, "books")
+            }
+        }
+    });
+```
+
+## 图标库导入
+
+* 进入web项目安装图标库 `npm install @ant-design/icons-vue --save`
+  * import导入整个图标库
+
+    ```js
+    // main.ts
+    import * as Icons from '@ant-design/icons-vue';
+
+    //全局使用图标
+    const icons: any = Icons;
+    for(const i in icons){
+      app.component(i, icons[i]);
+    }
+    ```
+
+## Ant Design Vue list组件添加
+
+* 步骤
+  1. 在Ant Design Vue中找到需要的组件
+  2. 定义数据并初始化（定义，初始化，return）
+  3. 导入图标库显示
+  4. 按需修改组件样式布局
+  5. 调整接口为动态SQL
+  6. 修改图标样式（正方形圆形），先在前端修改，后复制到后端
+
+* 报错
+  * Typesctipt报错
+    在定义数据时添加`: any`
+  * 校验规则:vue/no-unused-vars
+    删除未使用到的变量/删除该校验规则
+  * 校验规则@typescript-eslint/no-explicit-any
+    在 .eslintrc.js 删除该校验规则
+
+## 接口调整为动态SQL
+
+当请求参数为空时候做特殊判断
+
+```java
+//动态SQL
+        if(!ObjectUtils.isEmpty(req.getName())){
+            //模糊查询
+            criteria.andNameLike("%"+req.getName()+"%");
+        }
+```
+
+## Vue CLI多环境配置
+
+http请求主机地址不能耦合在代码中
+
+* 步骤
+  * web目录下新建包 .env.dev（text） -- 环境为开发环境
+
+    ```text
+    NODE_ENV=development
+    VUE_APP_SERVER=http://127.0.0.1:8880
+    ```
+
+  * web目录下新建包 .env.prod（text）-- 生产环境
+  
+    ```text
+    NODE_ENV=development
+    VUE_APP_SERVER=http://server.imooc.com
+    ```
+
+  * 配置编译和启动命令读取多环境配置的变量
+
+    ```json
+    // package.json
+    "serve": "vue-cli-service serve",
+
+    "serve-dev": "vue-cli-service serve --mode dev",
+    "serve-prod": "vue-cli-service serve --mode prod"
+    ```
+  
+  * 日志打印测试配置成功(读环境变量)
+
+    ```ts
+    console.log('环境：', process.env.NODE_ENV);
+    console.log('服务端：', process.env.VUE_APP_SERVER);
+    ```
+
+  * 对应调整buid编译命令
+  * 全局设定项目端口地址的系统变量baseurl
+
+    ```js
+    //main.ts
+    import axios from 'axios';
+    axio.defaults.baseURL = process.env.VUE_APP_SERVER;
+    ```
+
+  * 修改vue页面中axios的baseurl读配置文件
+
+## axios拦截器使用
+
+* 原因：前端调试需要在前端打印日志，众多前后端接口都需要如此调试，axios拦截器功能把请求日志和返回参数一起打印出来
+* 步骤
+  1. main.ts中配置axios拦截器
+
+    ```js
+    /**
+     * axios拦截器
+    */
+    axios.interceptors.request.use(function (config) {
+      console.log('请求参数：', config);
+      const token = store.state.user.token;
+      if (Tool.isNotEmpty(token)) {
+        config.headers.token = token;
+        console.log("请求headers增加token:", token);
+      }
+      return config;
+    }, error => {
+      return Promise.reject(error);
+    });
+    axios.interceptors.response.use(function (response) {
+      console.log('返回结果：', response);
+      return response;
+    }, error => {
+      console.log('返回错误：', error);
+      const response = error.response;
+      const status = response.status;
+      if (status === 401) {
+        // 判断状态码是401 跳转到首页或登录页
+        console.log("未登录，跳到首页");
+        store.commit("setUser", {});
+        message.error("未登录或登录超时");
+        router.push('/');
+      }
+      return Promise.reject(error);
+    });
+    ```
+
+## 使用过滤器记录接口耗时
+
+* 步骤
+  1. 新建过滤器层包 com.hopkin.wiki.filter
+  2. 编写LogFilter.java（较为固定，用现成的代码）
+
+  ```java
+  import org.slf4j.Logger;
+  import org.slf4j.LoggerFactory;
+  import org.springframework.stereotype.Component;
+
+  import javax.servlet.*;
+  import javax.servlet.http.HttpServletRequest;
+  import java.io.IOException;
+
+  @Component
+  public class LogFilter implements Filter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LogFilter.class);
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+
+    }
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        // 打印请求信息
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        LOG.info("------------- LogFilter 开始 -------------");
+        LOG.info("请求地址: {} {}", request.getRequestURL().toString(), request.getMethod());
+        LOG.info("远程地址: {}", request.getRemoteAddr());
+
+        long startTime = System.currentTimeMillis();
+        filterChain.doFilter(servletRequest, servletResponse);
+        LOG.info("------------- LogFilter 结束 耗时：{} ms -------------", System.currentTimeMillis() - startTime);
+    }
+  }
+
+  ```
+
+## 使用拦截器记录接口耗时
+
+* 步骤
+  1. 新建拦截器层包 com.hopkin.wiki.interceptor
+  2. 编写LogInterceptor.java（较为固定，用现成的代码）
+  3. 拦截器在config包中增加配置类SpringMvcConfig.java
+  4. SpringMvcConfig.java注入拦截器，编写addInterceptors方法，设置针对的请求，排除某些接口请求
+
+## 使用AOP记录接口耗时
+
+* 注意：过滤器拦截器aop选其一，一般使用aop
+* 主要内容：配置AOP，打印接口耗时、请求参数、返回参数
+* 步骤
+  1. 新增AOP的aspect层
+  2. pom增加新的依赖 aop和fastjson
+
+      ```xml
+      <!-- aop -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!--json 处理-->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.70</version>
+        </dependency>
+      ```
+
+  3. 新增aop 切点、前置通知、后置通知、环绕通知
+
+      ```java
+      import com.alibaba.fastjson.JSONObject;
+      import com.alibaba.fastjson.support.spring.PropertyPreFilters;
+      import org.aspectj.lang.JoinPoint;
+      import org.aspectj.lang.ProceedingJoinPoint;
+      import org.aspectj.lang.Signature;
+      import org.aspectj.lang.annotation.Around;
+      import org.aspectj.lang.annotation.Aspect;
+      import org.aspectj.lang.annotation.Before;
+      import org.aspectj.lang.annotation.Pointcut;
+      import org.slf4j.Logger;
+      import org.slf4j.LoggerFactory;
+      import org.springframework.stereotype.Component;
+      import org.springframework.web.context.request.RequestContextHolder;
+      import org.springframework.web.context.request.ServletRequestAttributes;
+      import org.springframework.web.multipart.MultipartFile;
+
+      import javax.servlet.ServletRequest;
+      import javax.servlet.ServletResponse;
+      import javax.servlet.http.HttpServletRequest;
+
+      @Aspect
+      @Component
+      public class LogAspect {
+
+          private final static Logger LOG = LoggerFactory.getLogger(LogAspect.class);
+
+          /** 定义一个切点 */
+          @Pointcut("execution(public * com.hopkin.*.controller..*Controller.*(..))")
+          public void controllerPointcut() {}
+
+          @Before("controllerPointcut()")
+          public void doBefore(JoinPoint joinPoint) throws Throwable {
+
+              // 开始打印请求日志
+              ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+              HttpServletRequest request = attributes.getRequest();
+              Signature signature = joinPoint.getSignature();
+              String name = signature.getName();
+
+              // 打印请求信息
+              LOG.info("------------- 开始 -------------");
+              LOG.info("请求地址: {} {}", request.getRequestURL().toString(), request.getMethod());
+              LOG.info("类名方法: {}.{}", signature.getDeclaringTypeName(), name);
+              LOG.info("远程地址: {}", request.getRemoteAddr());
+
+              // 打印请求参数
+              Object[] args = joinPoint.getArgs();
+          // LOG.info("请求参数: {}", JSONObject.toJSONString(args));
+
+          Object[] arguments  = new Object[args.length];
+              for (int i = 0; i < args.length; i++) {
+                  if (args[i] instanceof ServletRequest
+                          || args[i] instanceof ServletResponse
+                          || args[i] instanceof MultipartFile) {
+                      continue;
+                  }
+                  arguments[i] = args[i];
+              }
+              // 排除字段，敏感字段或太长的字段不显示
+              String[] excludeProperties = {"password", "file"};
+              PropertyPreFilters filters = new PropertyPreFilters();
+              PropertyPreFilters.MySimplePropertyPreFilter excludefilter = filters.addFilter();
+              excludefilter.addExcludes(excludeProperties);
+              LOG.info("请求参数: {}", JSONObject.toJSONString(arguments, excludefilter));
+          }
+
+          @Around("controllerPointcut()")
+          public Object doAround(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+              long startTime = System.currentTimeMillis();
+              Object result = proceedingJoinPoint.proceed();
+              // 排除字段，敏感字段或太长的字段不显示
+              String[] excludeProperties = {"password", "file"};
+              PropertyPreFilters filters = new PropertyPreFilters();
+              PropertyPreFilters.MySimplePropertyPreFilter excludefilter = filters.addFilter();
+              excludefilter.addExcludes(excludeProperties);
+              LOG.info("返回结果: {}", JSONObject.toJSONString(result, excludefilter));
+              LOG.info("------------- 结束 耗时：{} ms -------------", System.currentTimeMillis() - startTime);
+              return result;
+          }
+      }
+
+      ```
+
+## 增加电子书管理页面
+
+* 新页面开发：页面，路由，菜单
+* 具体步骤
+  * 由于相应页面管理员需要登录才可访问，新增admin文件夹
+  * 制定页面取名规则：小写开头，多单词-连接
+  * 新增vue.页面
+  * 在router中修改相应路由
+  * 配置菜单跳转入口router-link
+
+## 电子书表格展示
+
+* 步骤
+  1. public/image 添加静态图片资源
+  2. 数据库中将相应记录添加图片资源路径
+  3. 删除定义变量未使用的校验规则`'vue/no-unused-vars': 0,`
+  4. 编辑相应的vue页面（组件，参数，分页，查询和表格点击函数）
+
+## PageHelper实现后端分页
+
+* PageHelper本质
+  自动实现SQL 中的limit分页
+  一共查两次，第一次count(*)查总数据数，第二次查当前页信息
+* 注意
+  * 页面从1开始而不是0
+  * PageHelper.startPage(1,3)只对遇到的第一句SQL作用
+* 步骤
+  1. 导入PageHelper依赖
+  2. pagehelper 和 pageInfo使用
+  3. 设置log打印SQL语句
+
+      ```prop
+      # 打印所有的sql日志：sql, 参数, 结果
+      logging.level.com.hopkin.wiki.mapper=trace
+      ```
+  
+  4. 封装pagehelper相关的请求参数和返回参数
+
+## 前后端分页功能整合
+
+* 步骤
+  1. 设置pagination相关分页数据
+  2. 前端页面axios请求参数修改，设为动态handleQuery
+  3. 由于后端封装分页请求参数和返回参数，修改前端数据获取方式
+  4. 修改重置分页按钮，total
+  5. onMounted设置初始页相关数据
+
+## 制作电子书表单
+
+* 注意
+  * 表格内容未显示，但是返回参数正确--colums列变量设置错误，每列的源数据未对应好返回数据
+* 步骤
+  1. Model对话框，带年纪编辑按钮，弹出模态框
+  2. Model对话框放入文本框
+
+## 电子书编辑功能
+
+增加后端保存接口
+点击保存时候，调用保存接口
+保存成功刷新列表
+
+* 注意
+  * json方式（post）提交，controller需要在参数中添加@RequestBody注解（form表单方式可以不需要注解）
+* 步骤
+  1. 复制controller层其它接口进行修改（请求返回参数，具体service层操作）
+  2. 相应的请求封装类创建（由于保存直接对应与数据库表，可复制domain实体类）
+  3. service层新增业务方法
+  4. 前端页面当点击完成按钮绑定函数，提交http请求
+  5. 请求成功后刷新当前页面
+
+## 雪花算法
+
+* 原理：4部分组成：时间戳+数据中心+机器中心（标识机器数）+递增的序列号
+* 使用方法
+  1. 写配置文件，解耦数据中心和机器中心数的配置
+  2. new SnowFlake(datacenterId, machineId)/@Component注入
+  3. snowFlake.nextId()
+
+## 电子书新增功能
+
+1. 注入雪花算法Id生成器对象
+2. 前端添加新增按钮
+3. 前端编写add按钮点击新增的函数
+4. return add
+5. JacksonConfig全局配置解决前端端精度丢失问题
+
+## 电子书删除功能
+
+1. 后端编写删除接口（DeleteMapping；"/delete/{id}"；@PathVariable Long id）
+2. 前端添加删除按钮和删除确认框
+3. 前端删除按钮绑定删除函数
+4. return delete删除函数
+
+## 使用Validation做参数校验
+
+对电子书查询和保存做参数校验
+集成spring-boot-starter-validation
+对保存接口和查询接口增加参数校验
+校验不通过时，前端弹出错误提示
+
+* 步骤
+  1. 导入依赖
+  2. 对应请求封装类设置校验
+  3. 接口处开启校验 @Valid
+  4. 统一异常处理
+  5. 前端添加message组件给出提示
+
+## 电子书管理功能优化
+
+增加名字查询
+编辑时复制对象
+
+## 分类管理功能开发
+
+* 注意
+  * ctrl+E快速回到上个页面/双屏幕 --- 对应数据表修改属性
+  * 单词复数 categorys -- 项目风格，所有列表加s
+* 步骤
+  1. 设计分类表，生成持久层代码
+  2. service和controller层---从电子书管理部分拷贝一套分类管理代码，用搜索替换(ctrl+r)功能替换表名，完成分类的基本增删改查功能（不勾选word）
+  3. 封装类编写，从持久层domain中复制，validation检验
+  4. 前端页面编写--从已有页面复制,关键字替换，修改表格、表单
+  5. 修改前端路由
+  6. 修改菜单部分，添加相应功能
+
+## 分类表格显示优化
+
+* 不分页
+  * 编写后端接口（将分页功能的页显示条数设置1000也可，两次查询效率低）
+  * 编写前端接口，删除所有有关分页的（搜索pagination）
+* 树型表格
+  1. 添加tool类，递归将数据转换成树形
+  2. 为表格添加新的数据源变量
+  3. 调用tool中递归方法，return 变量
+* 父分类用select选择器下拉框实现
+  1. 添加select下拉框组件
+  6. 分类编辑功能优化：新增/编辑分类时，支持选中某一分类作为父分类
+  7. 电子书管理功能优化：编辑电子书时，可以选中分类一、分类二；表格显示分类名称
+  8. 首页显示分类菜单
+  7. 点击某分类时，显示该分类下所有的电子书
