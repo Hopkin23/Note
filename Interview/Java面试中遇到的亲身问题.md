@@ -68,3 +68,31 @@
 锁，并发，垃圾回收
 31. hashmap hashtable
 32. 缓存和消息队列
+33. java面向对象的特点:多态、封装、继承
+34. mybatis多表查询，用注解方法怎么做
+35. mybatis数据库字段和查询属性不一致怎么处理（注解）
+36. 为什么使用respcontronller注解
+37. springmvc接口自动封装用什么注解
+    responbody
+38. mysql索性，like查询是否触发索性
+39. 前端模板样式是自己写，还是网上找的改的
+40. lamda语法熟悉么
+41. 判断变量a和字符串是否相同
+42. 有一些学生对象，现在想将这些学生对象以学号顺序排序存储
+    https://www.cnblogs.com/ygj0930/p/5950971.html
+    第一种，可以实现边添加边排序，需要用到TreeSet。
+
+    第二种，用数组存放对象们，但是不需单独取出某属性排列好再重存，而是在原数组上用比较器重新排一次序。需要用到Arrays.sort(arr,comparator)。
+
+    第三种，用集合类中的list的子类存放对象们，然后排序。需要用到Collections.sort(list,comparator)。
+43. 序列化怎么认识
+44. 前后端数据如何传输，过程是什么
+45. Object类下面的方法
+    Object类有12个成员方法，按照用途可以分为以下几种
+    1，构造函数Object()
+    2，hashCode和equals函数用来判断对象是否相同,
+    3，wait(),wait(long),wait(long,int),notify(),notifyAll()
+    4，toString()和getClass,
+    5，clone()
+    6，finalize()用于在垃圾回收
+46. map遍历
